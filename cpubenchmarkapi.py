@@ -300,22 +300,28 @@ def readCSV():
 # Function to get the results for the list of cpu's provided
 def gatherResults(cpus, queue):
     cpuDict = {
-    "Name":[],
-    "CPU Class":[],
-    "Socket":[],
-    "Launched":[],
-    "Overall Score":[],
-    "Single Thread Rating":[],
-    "Clockspeed":[],
-    "Turbo Speed":[],
-    "TDP":[],
-    "Cores":[],
-    "Threads":[]
+        "Name": [],
+        "CPU Class": [],
+        "Socket": [],
+        "Launched": [],
+        "Overall Score": [],
+        "Single Thread Rating": [],
+        "Clockspeed": [],
+        "Turbo Speed": [],
+        "TDP": [],
+        "Cores": [],
+        "Threads": []
     }
-    try:
-        for cpu in cpus:
-            currentCPU = cpu
+    
+    for cpu in cpus:
+        currentCPU = cpu
+        try:
             result = get(f'{baseURL}{cpu}', headers=headers)
+            # 检查 HTTP 请求是否成功
+            if result.status_code != 200:
+                print(f"\nSkipping {currentCPU}: HTTP {result.status_code} error")
+                continue
+                
             soup = bs(result.content, "html.parser")
 
             sup = soup.find_all('sup')
@@ -331,8 +337,18 @@ def gatherResults(cpus, queue):
             getDetails(soup, numPhysicalCPUs, cpuDict)
 
             fillGaps(cpuDict)
-        queue.put(cpuDict)
-        return cpuDict
+            
+        except Exception as e:
+            print(f"\nSkipping {currentCPU}: Error occurred - {str(e)}")
+            # 即使发生错误，也要确保字典长度一致
+            cpuDict["Name"].append(currentCPU)
+            for key in cpuDict.keys():
+                if key != "Name" and len(cpuDict[key]) < len(cpuDict["Name"]):
+                    cpuDict[key].append("N/A")
+            continue
+
+    queue.put(cpuDict)
+    return cpuDict
     except:
         print("\nAn error occurred gathering CPU data on the following CPU \'"+currentCPU+"\'.")
         print("Make sure the CPU is valid and/or formatted correctly")
