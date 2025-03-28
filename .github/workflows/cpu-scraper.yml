@@ -30,7 +30,7 @@ jobs:
       # 4. 运行爬取脚本
       - name: Run CPU scraper
         run: |
-          python3 cpu_scraper.py -i cpus.txt -o cpuData.csv
+          python3 cpubenchmarkapi.py -i cpus.txt -o cpuData.csv
 
       # 5. 创建 Release 并上传 CSV
       - name: Create Release and Upload CSV
