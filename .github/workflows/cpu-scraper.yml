@@ -27,12 +27,24 @@ jobs:
         run: |
           python3 cpubenchmarkapi.py -i cpus.txt -o cpuData.csv
 
+      - name: Verify CSV file
+        run: |
+          echo "Checking if cpuData.csv exists..."
+          if [ -f "cpuData.csv" ]; then
+            echo "File exists!"
+            ls -lh cpuData.csv  # 显示文件大小
+            cat cpuData.csv | head -n 5  # 输出文件前5行，确认内容
+          else
+            echo "Error: cpuData.csv not found!"
+            exit 1
+          fi
+
       - name: Upload CSV as artifact
         uses: actions/upload-artifact@v4
         with:
           name: cpu-data
           path: cpuData.csv
-          if-no-files-found: error
+          if-no-files-found: error  # 如果文件不存在，直接报错
 
       - name: Create Release and Upload CSV
         env:
@@ -42,5 +54,5 @@ jobs:
           timeout 5m gh release create "$TAG_NAME" \
             --title "CPU Data $TAG_NAME" \
             --notes "Automated CPU benchmark data scrape from $(date)" \
-            --draft=false || echo "Release creation timed out, CSV still available as artifact"
-          timeout 5m gh release upload "$TAG_NAME" cpuData.csv || echo "Upload timed out, check artifacts"
+            --draft=false || echo "Release creation timed out"
+          timeout 5m gh release upload "$TAG_NAME" cpuData.csv || echo "Upload timed out"
