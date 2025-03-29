@@ -39,8 +39,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG_NAME="v$(date +'%Y%m%d-%H%M%S')"
-          gh release create "$TAG_NAME" \
+          timeout 5m gh release create "$TAG_NAME" \
             --title "CPU Data $TAG_NAME" \
             --notes "Automated CPU benchmark data scrape from $(date)" \
-            --draft=false
-          gh release upload "$TAG_NAME" cpuData.csv
+            --draft=false || echo "Release creation timed out, CSV still available as artifact"
+          timeout 5m gh release upload "$TAG_NAME" cpuData.csv || echo "Upload timed out, check artifacts"
