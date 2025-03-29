@@ -1,50 +1,46 @@
 name: CPU Data Scraper
 
-# 触发条件：推送到 main 分支或手动触发
 on:
   push:
     branches: [ main ]
-  workflow_dispatch:  # 允许手动触发
+  workflow_dispatch:
 
 jobs:
   scrape-and-release:
     runs-on: ubuntu-latest
     
     steps:
-      # 1. 检出代码
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2. 设置 Python 环境
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.x'
 
-      # 3. 安装依赖
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # 4. 运行爬取脚本
       - name: Run CPU scraper
         run: |
           python3 cpubenchmarkapi.py -i cpus.txt -o cpuData.csv
 
-      # 5. 创建 Release 并上传 CSV
+      - name: Upload CSV as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cpu-data
+          path: cpuData.csv
+          if-no-files-found: error
+
       - name: Create Release and Upload CSV
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # 获取当前日期作为版本号
           TAG_NAME="v$(date +'%Y%m%d-%H%M%S')"
-          
-          # 创建 release
           gh release create "$TAG_NAME" \
             --title "CPU Data $TAG_NAME" \
             --notes "Automated CPU benchmark data scrape from $(date)" \
             --draft=false
-
-          # 上传 CSV 文件到 release
           gh release upload "$TAG_NAME" cpuData.csv
